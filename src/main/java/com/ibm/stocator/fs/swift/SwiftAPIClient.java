@@ -31,7 +31,6 @@ import java.util.Properties;
 
 import org.javaswift.joss.client.factory.AccountConfig;
 import org.javaswift.joss.client.factory.AuthenticationMethod;
-import org.javaswift.joss.model.Account;
 import org.javaswift.joss.model.Container;
 import org.javaswift.joss.model.DirectoryOrObject;
 import org.javaswift.joss.model.PaginationMap;
@@ -658,23 +657,23 @@ public class SwiftAPIClient implements IStoreClient {
    * @param objectName
    * @return boolean if job is successful
    */
-  private boolean isJobSuccessful(String objectName) {
+  private boolean isJobSuccessful(String objectName) throws IOException {
     LOG.trace("Checking if job completed successfull for {}", objectName);
     if (cachedSparkJobsStatus.containsKey(objectName)) {
       return cachedSparkJobsStatus.get(objectName).booleanValue();
     }
-    String obj = objectName;
-    Account account = mJossAccount.getAccount();
-    LOG.trace("HEAD {}", obj + "/" + HADOOP_SUCCESS);
-    StoredObject so = account.getContainer(container).getObject(obj
-        + "/" + HADOOP_SUCCESS);
-    Boolean isJobOK = Boolean.FALSE;
-    if (so.exists()) {
-      LOG.debug("{} exists", obj + "/" + HADOOP_SUCCESS);
-      isJobOK = Boolean.TRUE;
+    LOG.trace("HEAD {}", objectName + "/" + HADOOP_SUCCESS);
+    boolean success = true;
+
+    try {
+      SwiftAPIDirect.getObjectMetadata(mJossAccount, container, objectName + "/" + HADOOP_SUCCESS,
+              swiftConnectionManager);
+      LOG.debug("{} exists", objectName + "/" + HADOOP_SUCCESS);
+    } catch (FileNotFoundException fnfe) {
+      success = false;
     }
-    cachedSparkJobsStatus.put(objectName, isJobOK);
-    return isJobOK.booleanValue();
+    cachedSparkJobsStatus.put(objectName, success);
+    return success;
   }
 
   /**

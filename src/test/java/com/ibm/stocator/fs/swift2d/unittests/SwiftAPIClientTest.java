@@ -36,8 +36,6 @@ import org.apache.hadoop.fs.FileStatus;
 import com.ibm.stocator.fs.swift.SwiftAPIClient;
 import com.ibm.stocator.fs.swift.auth.JossAccount;
 
-import static com.ibm.stocator.fs.common.Constants.HADOOP_SUCCESS;
-
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(StoredObject.class)
 public class SwiftAPIClientTest {
@@ -166,43 +164,6 @@ public class SwiftAPIClientTest {
     long result = Whitebox.invokeMethod(mSwiftAPIClient, "getLastModified", stringTime);
     Assert.assertEquals("getLastModified() shows incorrect time",
             longTime, result);
-  }
-
-  @Test
-  public void isJobSuccessfulTest() throws Exception {
-    String objectName = "data7-1-23-a.txt/part-00002-attempt_201612062056_0000_m_000002_2";
-
-    //test to see if _SUCCESS object does not exist
-    mStoredObject = new StoredObjectMock(mContainer, objectName + "/" + HADOOP_SUCCESS);
-    Assert.assertEquals("isJobSuccessful() shows _SUCCESS object already exists",
-            false, mStoredObject.exists());
-
-    //test to see if _SUCCESS object exists
-    mStoredObject.uploadObject(new byte[]{});
-    Assert.assertEquals("isJobSuccessful() shows _SUCCESS object does not exist",
-            true, mStoredObject.exists());
-
-    //test when _HADOOP_SUCCESS exists
-    boolean result = Whitebox.invokeMethod(mSwiftAPIClient, "isJobSuccessful", objectName);
-    Assert.assertEquals("isJobSuccessful() failed even when HADOOP_SUCCESS exists",
-            true, result);
-
-    //test to see if job status is cached properly
-    HashMap jobStatus = Whitebox.getInternalState(mSwiftAPIClient, "cachedSparkJobsStatus");
-    Assert.assertEquals("isJobSuccessful() shows job status is not cached correctly",
-            true, jobStatus.containsKey(objectName));
-
-    //test to see if it obtains status from the cache
-    result = Whitebox.invokeMethod(mSwiftAPIClient, "isJobSuccessful", objectName);
-    Assert.assertEquals("isJobSuccessful() shows job status is not obtained from cache",
-            true, result);
-
-    //test when the container name is part of the object name
-    result = Whitebox.invokeMethod(mSwiftAPIClient, "isJobSuccessful",
-            mContainerName + "/" + objectName);
-    Assert.assertEquals("isJobSuccessful() failed when the container name"
-            + "is part of the object name",
-            false, result);
   }
 
   @Test
